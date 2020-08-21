@@ -1,0 +1,13 @@
+body {
+	--whitish: #DADADA;
+	--light-gray: #404049;
+	--gray: #35353A;
+	--dark-gray: #28282E;
+	--blackish: #1c1c21;
+	background: var(--gray);
+}
+
+canvas {
+	background: var(--whitish);
+
+}
