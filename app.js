@@ -51,15 +51,13 @@ class App {
 		let new_blocks = this.blocks.clone();
 		for(let x=0; x < this.blocks.width; x++) {
 			for(let y=0; y < this.blocks.height; y++) {
-				let block = this.blocks.get(x, y);
-				// TODO: update the block
-				
-				let down_spill = 0;
-				let up_spill = 0;
-				let left_spill = 0;
-				let right_spill = 0;
+				let outputs = [
+					{dir: new Vec2(-1, 0), value: 0}, 
+					{dir: new Vec2(1, 0), value: 0}, 
+					{dir: new Vec2(0, -1), value: 0}, 
+					{dir: new Vec2(0, 1), value: 0}
+				].filter((output) => !this.blocks.has_block(x+output.dir.x, y+output.dir.y));
 				new_blocks.set(x, y, block);
-		
 			}
 		}
 		this.blocks = new_blocks;
