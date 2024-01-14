@@ -1,7 +1,9 @@
-let width = 20;
+import { Blocks, Vec2 } from "blocks";
+
+let width = 40;
 let height = width/2;
-let res = 8;
-let canvas, blocks, _water, rw, rh;
+let blocks = new Blocks(width, height);
+let canvas, rw, rh;
 window.oncontextmenu = function () {
     return false;   // cancel default menu
 }
@@ -25,17 +27,18 @@ function display() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = "#000000";
     ctx.lineWidth = 2;
-    for(let x=0; x<width; x++) {
-        for(let y=0; y<height; y++) {
-            if(blocks[x][y] === -1) {
+    for(let x=0; x < blocks.width; x++) {
+        for(let y=0; y < blocks.height; y++) {
+            let block = blocks.get(x, y);
+            if (block.block === 1) {
                 ctx.fillStyle = "#000000";
                 ctx.fillRect(x*rw+.5, y*rh+.5, rw*0.98, rh*0.98);
             } else {
                 ctx.fillStyle = "#FFFFFF";
                 ctx.fillRect(x*rw+.5, y*rh+.5, rw*0.98, rh*0.98);
-                if(blocks[x][y] > 0) {
+                let h = Math.min(block.water_level, 1);
+                if(h > 0) {
                     ctx.fillStyle = "#001166";
-                    let h = blocks[x][y];
                     // h = Math.floor(res*h)/res;
                     ctx.fillRect(x*rw+.5, (y+1-h)*rh+.5, rw*0.98, rh*0.98*h);
                 }
@@ -45,60 +48,36 @@ function display() {
 }
 
 function update() {
-    for(let x=0; x<width; x++) {
-        for(let y=0; y<height; y++) {
-            _water[x][y] = blocks[x][y];
-        }
-    }
+    let new_blocks = blocks.clone();
     // spill pass
     // TODO: make the spill left/right symmetric
-    for(let x=0; x<width; x++) {
-        for(let y=0; y<height; y++) {
-            if (blocks[x][y] > 0 && (y+1 >= height || Math.abs(blocks[x][y+1]) === 1)) {
-                if (x+1 < width && blocks[x+1][y] >= 0 && blocks[x][y] > blocks[x+1][y]) {
-                    let avg = (blocks[x][y] + blocks[x+1][y])/2;
-                    _water[x][y] -= blocks[x][y]-avg;
-                    _water[x+1][y] += avg-blocks[x+1][y];
-                }
-                if (x-1 >= 0 && blocks[x-1][y] >= 0 && blocks[x][y] > blocks[x-1][y]) {
-                    let avg = (blocks[x][y] + blocks[x-1][y])/2;
-                    _water[x][y] -= blocks[x][y]-avg;
-                    _water[x-1][y] += avg-blocks[x-1][y];
-                }
-            }
+    for(let x=0; x < width; x++) {
+        for(let y=0; y < height; y++) {
+            let block = blocks.get(x, y);
+            // TODO: update the block
+            
+            let down_spill = 0;
+            let up_spill = 0;
+            let left_spill = 0;
+            let right_spill = 0;
+            new_blocks.set(x, y, block);
+    
         }
     }
-    // gravity pass
-    for(let x=0; x<width; x++) {
-        for(let y=height-1; y>=0; y--) {
-            if (_water[x][y] > 0 && !(y+1 >= height || _water[x][y+1] === -1)) {
-                _water[x][y+1] = _water[x][y+1]+_water[x][y];
-                _water[x][y] = 0;
-                if(_water[x][y+1] > 1) {
-                    _water[x][y] = _water[x][y+1]-1;
-                    _water[x][y+1] = 1;
-                }
-            }
-        }
-    }
-    for(let x=0; x<width; x++) {
-        for(let y=0; y<height; y++) {
-            blocks[x][y] = _water[x][y];
-        }
-    }
+    blocks = new_blocks;
     display();
 }
 
 function onLoad() {
     canvas = document.getElementById("canvas");
     blocks = [];
-    _water = []
+    _blocks = []
     for(let x=0; x<width; x++) {
         blocks[x] = [];
-        _water[x] = [];
+        _blocks[x] = [];
         for(let y=0; y<height; y++) {
             blocks[x][y] = 0;
-            _water[x][y] = 0;
+            _blocks[x][y] = 0;
         }
     }
 
