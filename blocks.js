@@ -3,6 +3,15 @@ class Vec2 {
         this.x = x;
         this.y = y;
     }
+
+    sum() {
+        return Math.abs(this.x) + Math.abs(this.y);
+    }
+
+    capped() {
+        let len = Math.max(1, this.length());
+        return new Vec2(this.x/len, this.y/len);
+    }
 }
 
 class Blocks {
@@ -26,6 +35,15 @@ class Blocks {
         if (y < 0 || y >= this.height) return false;
         var i = this.linearize(x, y);
         return this.blocks[i] === 1;
+    }
+
+    add_water(x, y, amount, speed) {
+        if (x < 0 || x >= this.width) return;
+        if (y < 0 || y >= this.height) return;
+        var i = this.linearize(x, y);
+        this.water_levels[i] += amount;
+        this.water_speed_x[i] += speed.x*amount;
+        this.water_speed_y[i] += speed.y*amount;
     }
 
     toggle_water(x, y) {
