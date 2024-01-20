@@ -1,16 +1,11 @@
+var G = 1;
+var viscosity = 0;
+
+
 class Vec2 {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-    }
-
-    sum() {
-        return Math.abs(this.x) + Math.abs(this.y);
-    }
-
-    capped() {
-        let len = Math.max(1, this.length());
-        return new Vec2(this.x/len, this.y/len);
     }
 }
 
@@ -46,6 +41,33 @@ class Blocks {
         this.water_speed_y[i] += speed.y*amount;
     }
 
+    water_height(i) {
+        let total = 0;
+        while (i >= 0 && this.water_levels[i] > 0) {
+            total += this.water_levels[i];
+            i -= this.width;
+        }
+        return total;
+    }
+
+    get_data(x, y) {
+        if (x < 0 || x >= this.width) return { p: 0, h: 0, v: new Vec2(0, 0) };
+        if (y < 0 || y >= this.height) return  { p: 0, h: 0, v: new Vec2(0, 0) };
+        let i = this.linearize(x, y);
+        return {
+            p: G*this.water_height(i),
+            h: this.water_levels[i],
+            v: new Vec2(this.water_speed_x[i], this.water_speed_y[i])
+        };
+    }
+
+    set_data(x, y, h, vx, vy) {
+        let i = this.linearize(x, y);
+        this.water_levels[i] = h;
+        this.water_speed_x[i] = vx;
+        this.water_speed_y[i] = vy;
+    }
+
     toggle_water(x, y) {
         var i = this.linearize(x, y);
         this.blocks[i] = 0;
@@ -66,14 +88,14 @@ class Blocks {
         this.blocks[i] = 1 - this.blocks[i];
     }
 
-    clone() {
+    clone_terrain() {
         return new Blocks(
             this.width, 
             this.height, 
             [...this.blocks], 
-            [...this.water_levels],
-            [...this.water_speed_x],
-            [...this.water_speed_y]
+            Array(this.width*this.height).fill(0),
+            Array(this.width*this.height).fill(0),
+            Array(this.width*this.height).fill(0)
         );
     }
 }

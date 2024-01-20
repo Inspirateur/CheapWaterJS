@@ -1,3 +1,5 @@
+var eps = 0.1;
+
 class App {
 	rw; rh;
 
@@ -47,51 +49,36 @@ class App {
 	}
 
 	update() {
-		let new_blocks = this.blocks.clone();
-		// gravity pass
-		for(let i=0; i < new_blocks.water_speed_y.length; i++) {
-			if (new_blocks.water_levels[i] === 0) continue;
-			new_blocks.water_speed_y[i] += 1;
-		}
+		let new_blocks = this.blocks.clone_terrain();
 		for(let x=0; x < this.blocks.width; x++) {
 			for(let y=0; y < this.blocks.height; y++) {
-				let i = this.blocks.linearize(x, y);
-				if (this.blocks.water_levels[i] === 0) continue;
-				let dirs = [
-					new Vec2(-1, 0), 
-					new Vec2(1, 0), 
-					new Vec2(0, -1), 
-					new Vec2(0, 1)
-				].filter((dir) => !this.blocks.has_block(x+dir.x, y+dir.y));
-				let speed = new Vec2(this.blocks.water_speed_x[i], this.blocks.water_speed_y[i]);
-				// spill pass
-				if (this.blocks.water_levels[i] > 1) {
-					let spill = (this.blocks.water_levels[i]-1)/dirs.length;
-					for(let dir of dirs) {
-						new_blocks.add_water(x+dir.x, y+dir.y, spill, speed);
-					}
-					new_blocks.water_levels[i] = 1;
+				if (this.blocks.has_block(x, y)) continue;
+				let self = this.blocks.get_data(x, y);
+				let above = this.blocks.get_data(x, y-1);
+				if (above.h === 0) {
+					above = self;
 				}
-				// motion pass
-				let water_amount = new_blocks.water_levels[i];
-				let momentum = speed.sum();
-				let capped_sum = Math.max(momentum, 1);
-				let capped_speed = new Vec2(speed.x/capped_sum, speed.y/capped_sum);
-				for(let dir of dirs) {
-					let ratio = dir.x*capped_speed.x + dir.y*capped_speed.y;
-					if (ratio <= 0) continue;
-					momentum -= ratio;
-					let amount = water_amount*ratio;
-					new_blocks.add_water(x+dir.x, y+dir.y, ratio*amount, speed);
-					new_blocks.water_levels[i] -= amount;
-				}				
+				let right = this.blocks.has_block(x+1, y) ? self : this.blocks.get_data(x+1, y);
+				let under = this.blocks.get_data(x, y+1);
+				let left = this.blocks.has_block(x-1, y) ? self : this.blocks.get_data(x-1, y);
+				let new_h = self.h - eps*(under.h*under.v.y - above.v.y*above.h + right.v.x*right.h - left.h*left.v.x);
+				let new_vx = 0;
+				let new_vy = 0;
+				if (self.h > 0) {
+					// new_vx = self.v.x - eps*(self.v.y*(above.v.x-under.v.x) + self.v.x*(right.v.x-left.v.x)) - eps*(right.p-left.p) + viscosity*eps*(above.v.x-under.v.x);
+					new_vx = self.v.x - eps*(right.p - left.p);
+					let g = this.blocks.has_block(x, y+1) ? 0 : G;
+					// new_vy = self.v.y - eps*(self.v.y*(above.v.y-under.v.y) + self.v.x*(right.v.y-left.v.y)) - eps*(above.p-under.p) + viscosity*eps*(right.v.y-left.v.y) + eps*g;
+					new_vy = self.v.y - eps*(under.p - above.p) + eps*g;	
+				}
+				if (!isFinite(new_vy)) {
+					console.log(self);
+					console.log(above);
+					console.log(right);
+					throw new Error("j'ai le seum");
+				}
+				new_blocks.set_data(x, y, new_h, new_vx, new_vy);
 			}
-		}
-		// friction pass
-		for(let i=0; i < new_blocks.water_speed_y.length; i++) {
-			if (new_blocks.water_levels[i] === 0) continue;
-			new_blocks.water_speed_y[i] *= 0.8;
-			new_blocks.water_speed_x[i] *= 0.8;
 		}
 		this.blocks = new_blocks;
 		this.display();

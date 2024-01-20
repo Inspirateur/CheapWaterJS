@@ -3,8 +3,8 @@ window.oncontextmenu = function () {
 }
 
 window.onload = function() {
-    let width = 40;
-    let height = width/2;
+    let width = 3;
+    let height = 3;
     canvas = document.getElementById("canvas");
     var app = new App(canvas, width, height);
     canvas.addEventListener('mousedown', function(e) {
