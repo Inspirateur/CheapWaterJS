@@ -1,5 +1,11 @@
 var eps = 0.1;
 
+function clamp(a, min, max) {
+	if (a < min) return min;
+	if (a > max) return max;
+	return a;
+}
+
 class App {
 	rw; rh;
 
@@ -32,16 +38,17 @@ class App {
 		for(let x=0; x < this.blocks.width; x++) {
 			for(let y=0; y < this.blocks.height; y++) {
 				let i = this.blocks.linearize(x, y);
+				let y_display = this.blocks.height-y-1;
 				if (this.blocks.blocks[i] === 1) {
 					ctx.fillStyle = "#000000";
-					ctx.fillRect(x*this.rw+.5, y*this.rh+.5, this.rw*0.98, this.rh*0.98);
+					ctx.fillRect(x*this.rw+.5, y_display*this.rh+.5, this.rw*0.98, this.rh*0.98);
 				} else {
 					ctx.fillStyle = "#FFFFFF";
-					ctx.fillRect(x*this.rw+.5, y*this.rh+.5, this.rw*0.98, this.rh*0.98);
+					ctx.fillRect(x*this.rw+.5, y_display*this.rh+.5, this.rw*0.98, this.rh*0.98);
 					let h = Math.min(this.blocks.water_levels[i], 1);
 					if(h > 0) {
 						ctx.fillStyle = "#2266AA";
-						ctx.fillRect(x*this.rw+.5, (y+1-h)*this.rh+.5, this.rw*0.98, this.rh*0.98*h);
+						ctx.fillRect(x*this.rw+.5, (y_display+1-h)*this.rh+.5, this.rw*0.98, this.rh*0.98*h);
 					}
 				}
 			}
@@ -54,29 +61,25 @@ class App {
 			for(let y=0; y < this.blocks.height; y++) {
 				if (this.blocks.has_block(x, y)) continue;
 				let self = this.blocks.get_data(x, y);
-				let above = this.blocks.get_data(x, y-1);
-				if (above.h === 0) {
-					above = self;
-				}
-				let right = this.blocks.has_block(x+1, y) ? self : this.blocks.get_data(x+1, y);
-				let under = this.blocks.get_data(x, y+1);
-				let left = this.blocks.has_block(x-1, y) ? self : this.blocks.get_data(x-1, y);
-				let new_h = self.h - eps*(under.h*under.v.y - above.v.y*above.h + right.v.x*right.h - left.h*left.v.x);
+				let above = this.blocks.get_data(x, y+1);
+				let right = this.blocks.get_data(x+1, y);
+				let under = this.blocks.get_data(x, y-1);
+				let left = this.blocks.get_data(x-1, y);
+				let new_h = clamp(
+					self.h + eps*(left.h*self.v.x - right.h*right.v.x + under.h*self.v.y - above.h*above.v.y),
+					0, 1
+				);
 				let new_vx = 0;
 				let new_vy = 0;
-				if (self.h > 0) {
-					// new_vx = self.v.x - eps*(self.v.y*(above.v.x-under.v.x) + self.v.x*(right.v.x-left.v.x)) - eps*(right.p-left.p) + viscosity*eps*(above.v.x-under.v.x);
-					new_vx = self.v.x - eps*(right.p - left.p);
-					let g = this.blocks.has_block(x, y+1) ? 0 : G;
-					// new_vy = self.v.y - eps*(self.v.y*(above.v.y-under.v.y) + self.v.x*(right.v.y-left.v.y)) - eps*(above.p-under.p) + viscosity*eps*(right.v.y-left.v.y) + eps*g;
-					new_vy = self.v.y - eps*(under.p - above.p) + eps*g;	
+				if (self.solid === 0) {
+					if (left.solid === 0 && self.h + left.h > 0) {
+						new_vx = self.v.x - eps*(self.p - left.p);
+					}
+					if (under.solid === 0 && self.h + under.h > 0) {
+						new_vy = self.v.y - eps*G*(self.p - under.p) - eps*G;
+					}
 				}
-				if (!isFinite(new_vy)) {
-					console.log(self);
-					console.log(above);
-					console.log(right);
-					throw new Error("j'ai le seum");
-				}
+				
 				new_blocks.set_data(x, y, new_h, new_vx, new_vy);
 			}
 		}
@@ -87,7 +90,8 @@ class App {
 	on_click(event) {
 		let rect = this.canvas.getBoundingClientRect();
 		let x = Math.floor((event.clientX - rect.left)/this.rw);
-		let y = Math.floor((event.clientY - rect.top)/this.rh);
+		let y_display = Math.floor((event.clientY - rect.top)/this.rh);
+		let y = this.blocks.height - y_display - 1;
 		switch (event.which) {
 			case 1:
 				this.blocks.toggle_water(x, y);

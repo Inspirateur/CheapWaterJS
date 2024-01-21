@@ -43,18 +43,19 @@ class Blocks {
 
     water_height(i) {
         let total = 0;
-        while (i >= 0 && this.water_levels[i] > 0) {
+        while (i < this.height*this.width && this.water_levels[i] > 0) {
             total += this.water_levels[i];
-            i -= this.width;
+            i += this.width;
         }
         return total;
     }
 
     get_data(x, y) {
-        if (x < 0 || x >= this.width) return { p: 0, h: 0, v: new Vec2(0, 0) };
-        if (y < 0 || y >= this.height) return  { p: 0, h: 0, v: new Vec2(0, 0) };
+        if (x < 0 || x >= this.width) return { solid: 0, p: 0, h: 0, v: new Vec2(0, 0) };
+        if (y < 0 || y >= this.height) return  { solid: 0, p: 0, h: 0, v: new Vec2(0, 0) };
         let i = this.linearize(x, y);
         return {
+            solid: this.blocks[i],
             p: G*this.water_height(i),
             h: this.water_levels[i],
             v: new Vec2(this.water_speed_x[i], this.water_speed_y[i])
