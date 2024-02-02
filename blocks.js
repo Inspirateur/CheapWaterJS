@@ -1,5 +1,5 @@
 var G = 1;
-var viscosity = 0;
+var viscosity = 0.2;
 
 
 class Vec2 {
@@ -43,7 +43,7 @@ class Blocks {
 
     water_height(i) {
         let total = 0;
-        while (i < this.height*this.width && this.water_levels[i] > 0) {
+        while (i < this.height*this.width && this.water_levels[i] != 0) {
             total += this.water_levels[i];
             i += this.width;
         }
@@ -69,14 +69,10 @@ class Blocks {
         this.water_speed_y[i] = vy;
     }
 
-    toggle_water(x, y) {
+    fill_water(x, y) {
         var i = this.linearize(x, y);
         this.blocks[i] = 0;
-        if (this.water_levels[i] > 0) {
-            this.water_levels[i] = 0;
-        } else {
-            this.water_levels[i] = 1;
-        }
+        this.water_levels[i] = 1;
         this.water_speed_x[i] = 0;
         this.water_speed_y[i] = 0;
     }
